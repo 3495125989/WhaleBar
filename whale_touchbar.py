@@ -868,13 +868,46 @@ class Controller(NSObject):
             log("天气失败，60 秒后重试")
 
 
+def bar_width_for_model():
+    """按机型推触摸条可用宽度。
+
+    带 Touch Bar 的 MacBook Pro（13"/15"/16"）条都是 2170×60 像素，
+    也就是 **1085×30 点**；右边要给系统托盘留位置。
+    不同机型目前实测一致，但保留按型号判断的位置，将来出新型号好加。
+    """
+    try:
+        import subprocess
+        model = subprocess.run(["/usr/sbin/sysctl", "-n", "hw.model"],
+                               capture_output=True, text=True, timeout=3).stdout.strip()
+    except Exception:  # noqa: BLE001
+        model = ""
+
+    BAR_PT = 1085          # 触摸条总宽度（点）
+    RESERVE = 105          # 右边留给系统/托盘
+    WIDTHS = {
+        "MacBookPro13": (BAR_PT, RESERVE),
+        "MacBookPro14": (BAR_PT, RESERVE),
+        "MacBookPro15": (BAR_PT, RESERVE),
+        "MacBookPro16": (BAR_PT, RESERVE),
+    }
+    for prefix, (total, reserve) in WIDTHS.items():
+        if model.startswith(prefix):
+            cfg = config.CFG.get("bar") or {}
+            if cfg.get("width"):
+                return float(cfg["width"])     # 配置优先
+            return float(total - reserve)
+    cfg = config.CFG.get("bar") or {}
+    return float(cfg.get("width") or 980)
+
+
 def build_bar(ctrl):
     """整条触摸条用一个满宽自绘容器，自己排版，避免全挤在左边。"""
     bar = NSTouchBar.alloc().init()
     bar.setDelegate_(ctrl)
 
     # 宽度从配置来；容器内部按实际宽度排版，右边两个按钮永远贴右边缘
-    W = float(config.CFG.get("bar", {}).get("width", 710))
+    W = bar_width_for_model()
+    log(f"检测机型宽度 → {W:.0f}pt")
     H = 30
     item = NSCustomTouchBarItem.alloc().initWithIdentifier_("main")
     container = BarContent.alloc().initWithFrame_(((0, 0), (W, H)))

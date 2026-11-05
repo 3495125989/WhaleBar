@@ -72,10 +72,11 @@ python3 whale_touchbar.py
 
 ## 翻译（可选）
 
-默认**不翻译**，只显示识别出来的原文。
+默认**不翻译**，只显示识别出来的原文。想要翻译，得自己提供一个翻译源——没有内置的免费额度。
 
-要用翻译得去 [百度翻译开放平台](https://fanyi-api.baidu.com/) 申请免费 key（每月 5 万字），
-填进 `config.json`：
+### 国内用户：百度翻译
+
+[百度翻译开放平台](https://fanyi-api.baidu.com/) 申请「通用翻译 API」，免费额度每月 5 万字：
 
 ```json
 "translate": {
@@ -88,6 +89,27 @@ python3 whale_touchbar.py
 ```
 
 免费版 **QPS = 1**，所以代码里做了两件事：限制请求间隔、把多句合并成一次请求。
+
+### 海外用户：Google 网页接口
+
+百度在国内很好用，但**服务在境外、需要中国手机号注册**，海外用不了。
+国外可以用代码里已经实现好的 `google_free`（无需 key，走网页接口）：
+
+```json
+"translate": {
+  "provider": "google_free",
+  "from": "auto",
+  "to": "zh"
+}
+```
+
+> 这是**非官方接口**：可能限流、可能随时失效，别当生产用。
+> 反过来，这个接口在**中国大陆基本连不上**，所以两边的用户各用各的。
+
+### 想更稳的话
+
+自己接 DeepL / Google Cloud / 腾讯云的正式 API，改 `translate.py` 里的
+`_enabled()` 和 `translate()` 加一个分支就行，结构是留好的。
 
 ## 已知限制
 
