@@ -560,6 +560,7 @@ class Controller(NSObject):
             except Exception as e:  # noqa: BLE001
                 log(f"停采集失败 {e}")
             log("律动已关闭（柱子已隐藏）")
+            self._update_status_dot()
             return
 
         # ── 开：记住当前真实输出，切到含 BlackHole 的多输出 ──
@@ -612,6 +613,7 @@ class Controller(NSObject):
             except Exception:  # noqa: BLE001
                 pass
             log("字幕已关闭")
+            self._update_status_dot()
             return
         # 互斥：律动和字幕同时只开一个
         if getattr(self, "_meter_on", False):
@@ -640,6 +642,7 @@ class Controller(NSObject):
         import threading as _th
         _th.Thread(target=self._subtitle_reader, daemon=True).start()
         log("字幕已开启（流式）")
+        self._update_status_dot()
 
     @python_method
     def _subtitle_reader(self):
@@ -703,6 +706,17 @@ class Controller(NSObject):
                                  os.path.join(ASSISTANT_DIR, "律动助手.app")])
 
     # ── 翻译 key 设置 ──
+    def _update_status_dot(self, *_):
+        """菜单栏图标右上角一个小点：字幕/律动任一在跑就亮。"""
+        btn = getattr(getattr(self, "status_item", None), "button", None)
+        if btn is None:
+            return
+        active = bool(getattr(self, "_sub_on", False) or getattr(self, "_meter_on", False))
+        try:
+            btn.setTitle_(" •" if active else "")
+        except Exception:  # noqa: BLE001
+            pass
+
     def _refresh_tr_enabled(self):
         """没填 key 时，除了「不翻译」以外全禁用。"""
         tr = config.CFG.get("translate") or {}
@@ -1279,6 +1293,18 @@ def main():
     _wt = NSTimer.timerWithTimeInterval_target_selector_userInfo_repeats_(
         600.0, ctrl, "refreshWeather:", None, True)
     NSRunLoop.mainRunLoop().addTimer_forMode_(_wt, NSRunLoopCommonModes)
+    # 全局快捷键：⌘⌥S 字幕、⌘⌥M 律动、⌘⌥H 显隐触摸条
+    try:
+        import hotkey
+        hk = hotkey.GlobalHotkeys(log=log)
+        _mods = hotkey.cmdKey | hotkey.optionKey
+        hk.register("s", _mods, "⌘⌥S 字幕", lambda: ctrl.toggleSubtitle_(None))
+        hk.register("m", _mods, "⌘⌥M 律动", lambda: ctrl.toggleMeter_(None))
+        hk.register("h", _mods, "⌘⌥H 显隐", lambda: ctrl.toggleBar_(None))
+        hk.install()
+    except Exception as e:  # noqa: BLE001
+        log(f"快捷键不可用 {e}")
+
     log("进 runloop，PID=%d" % os.getpid())
     AppHelper.runEventLoop()
 
