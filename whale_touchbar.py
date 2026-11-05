@@ -490,6 +490,7 @@ class Controller(NSObject):
         log(f"语言设置已保存：{kind}={value}")
         # 字幕助手会自己盯 config.json，不用重启
         self._refresh_lang_checks()
+        self._refresh_tr_enabled()
         log(f"已保存 {spec}（字幕助手 2 秒内自动生效）")
 
     def switchToMonitor_(self, sender):
@@ -626,7 +627,7 @@ class Controller(NSObject):
         app = os.path.join(ASSISTANT_DIR, "字幕助手.app")
         if os.path.isdir(app):
             subprocess_call(["/usr/bin/open", "-n", app])
-            log("字幕：已启动 字幕助手.app")
+            log("字幕：已启动 字幕助手.app（SCK 抓音，不切输出）")
         else:
             log("⚠️ 没找到 字幕助手.app，先跑 ./build.command")
         self._sub_on = True
@@ -700,6 +701,98 @@ class Controller(NSObject):
                 log("⚠️ 律动助手不在了，自动重启")
                 subprocess_call(["/usr/bin/open", "-n",
                                  os.path.join(ASSISTANT_DIR, "律动助手.app")])
+
+    # ── 翻译 key 设置 ──
+    def _refresh_tr_enabled(self):
+        """没填 key 时，除了「不翻译」以外全禁用。"""
+        tr = config.CFG.get("translate") or {}
+        ready = bool(tr.get("appid")) and bool(tr.get("key")) and (tr.get("provider") or "none") != "none"
+        for item, spec in (getattr(self, "_lang_items", None) or []):
+            kind, value = str(spec).split(":", 1)
+            if kind != "tr":
+                continue
+            try:
+                item.setEnabled_(True if (value == "none" or ready) else False)
+            except Exception:  # noqa: BLE001
+                pass
+
+    def setupTranslateKey_(self, sender):
+        """弹框让用户填 APPID / 密钥。填了就能翻译，不填就只做识别。"""
+        from AppKit import NSAlert, NSTextField, NSView, NSMakeRect
+        alert = NSAlert.alloc().init()
+        alert.setMessageText_("翻译 API（百度）")
+        alert.setInformativeText_(
+            "填 APPID 和密钥即可开启翻译；留空则只能识别字幕。\n"
+            "申请地址：fanyi-api.baidu.com（免费，每月 5 万字）")
+
+        box = NSView.alloc().initWithFrame_(NSMakeRect(0, 0, 340, 60))
+        tr = config.CFG.get("translate") or {}
+
+        lab1 = NSTextField.labelWithString_("APPID")
+        lab1.setFrame_(NSMakeRect(0, 36, 60, 20))
+        box.addSubview_(lab1)
+        f1 = NSTextField.alloc().initWithFrame_(NSMakeRect(64, 34, 270, 24))
+        f1.setStringValue_(str(tr.get("appid") or ""))
+        box.addSubview_(f1)
+
+        lab2 = NSTextField.labelWithString_("密钥")
+        lab2.setFrame_(NSMakeRect(0, 6, 60, 20))
+        box.addSubview_(lab2)
+        f2 = NSTextField.alloc().initWithFrame_(NSMakeRect(64, 4, 270, 24))
+        f2.setStringValue_(str(tr.get("key") or ""))
+        box.addSubview_(f2)
+
+        alert.setAccessoryView_(box)
+        alert.addButtonWithTitle_("保存")
+        alert.addButtonWithTitle_("清空")
+
+        resp = alert.runModal()
+        config.reload()
+        tr = config.CFG.setdefault("translate", {})
+        if resp == 1001:          # 清空
+            tr["appid"] = ""
+            tr["key"] = ""
+            tr["provider"] = "none"
+            config.save()
+            log("翻译 key 已清空 → 只做识别")
+        else:
+            appid = str(f1.stringValue()).strip()
+            key = str(f2.stringValue()).strip()
+            tr["appid"] = appid
+            tr["key"] = key
+            tr["provider"] = "baidu" if (appid and key) else "none"
+            config.save()
+            log(f"翻译 key 已保存（{'已启用' if appid and key else '未填全，翻译关闭'}）")
+        self._refresh_lang_checks()
+        self._refresh_tr_enabled()
+
+    # ── 鲸鱼点开哪个 app ──
+    def pickApp_(self, sender):
+        spec = sender.representedObject()
+        if spec == "custom":
+            from AppKit import NSAlert, NSTextField, NSView, NSMakeRect
+            alert = NSAlert.alloc().init()
+            alert.setMessageText_("鲸鱼图标打开哪个应用？")
+            alert.setInformativeText_("填 macOS 应用名（不含 .app），比如 Safari、Visual Studio Code")
+            box = NSView.alloc().initWithFrame_(NSMakeRect(0, 0, 300, 26))
+            fld = NSTextField.alloc().initWithFrame_(NSMakeRect(0, 0, 300, 24))
+            fld.setStringValue_(str(config.CFG.get("appName") or ""))
+            box.addSubview_(fld)
+            alert.setAccessoryView_(box)
+            alert.addButtonWithTitle_("保存")
+            alert.addButtonWithTitle_("取消")
+            if alert.runModal() == 1000:
+                name = str(fld.stringValue()).strip()
+                if name:
+                    config.reload()
+                    config.CFG["appName"] = name
+                    config.save()
+                    log(f"鲸鱼将打开：{name}")
+        elif spec:
+            config.reload()
+            config.CFG["appName"] = str(spec)
+            config.save()
+            log(f"鲸鱼将打开：{spec}")
 
     def tickMeter_(self, timer):
         self._t = getattr(self, "_t", 0) + 1
@@ -1091,6 +1184,31 @@ def install_status_item(ctrl):
     menu.addItem_(NSMenuItem.separatorItem())
     try:
         ctrl._refresh_lang_checks()
+    except Exception:  # noqa: BLE001
+        pass
+
+    mi_key = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        "设置翻译 API Key…", "setupTranslateKey:", "")
+    mi_key.setTarget_(ctrl)
+    menu.addItem_(mi_key)
+
+    # 鲸鱼点开哪个应用
+    app_menu = NSMenu.alloc().initWithTitle_("鲸鱼打开的应用")
+    for title, spec in (("DeepSeek Harness", "DeepSeek Harness"),
+                        ("Safari", "Safari"),
+                        ("终端", "Terminal"),
+                        ("访达", "Finder"),
+                        ("自定义…", "custom")):
+        it = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(title, "pickApp:", "")
+        it.setTarget_(ctrl)
+        it.setRepresentedObject_(spec)
+        app_menu.addItem_(it)
+    mi_app = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("鲸鱼打开的应用", "", "")
+    mi_app.setSubmenu_(app_menu)
+    menu.addItem_(mi_app)
+
+    try:
+        ctrl._refresh_tr_enabled()
     except Exception:  # noqa: BLE001
         pass
 
