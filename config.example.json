@@ -1,0 +1,34 @@
+{
+  "appName": "DeepSeek Harness",
+  "weatherAppName": "Weather",
+  "weather": {
+    "enabled": true,
+    "refreshSeconds": 600
+  },
+  "meter": {
+    "enabled": false,
+    "device": "BlackHole 2ch",
+    "outputHint": "耳机监听"
+  },
+  "subtitle": {
+    "enabled": false,
+    "language": "zh-CN",
+    "showSeconds": 8
+  },
+  "trayId": "com.example.whaletouchbar.tray",
+  "tempDir": "/tmp",
+  "bar": {
+    "width": 980
+  },
+  "audio": {
+    "lastOutputName": "MacBook Pro扬声器",
+    "autoSwitchOutput": false
+  },
+  "translate": {
+    "provider": "none",
+    "appid": "",
+    "key": "",
+    "from": "auto",
+    "to": "zh"
+  }
+}

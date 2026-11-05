@@ -1,0 +1,10 @@
+# 全部是 PyObjC 的框架包装，版本只要和你的 Python 兼容即可
+pyobjc-core>=10.0
+pyobjc-framework-Cocoa>=10.0
+pyobjc-framework-Quartz>=10.0
+pyobjc-framework-AVFoundation>=10.0
+pyobjc-framework-CoreMedia>=10.0
+pyobjc-framework-Speech>=10.0
+# 音量律动（可选，只在开「音量律动」时需要）
+sounddevice>=0.4.6
+numpy>=1.24
