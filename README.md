@@ -1,12 +1,38 @@
-# Touch Bar 小鲸鱼
+# 鲸鱼条 · WhaleBar
 
-A tiny Touch Bar widget for macOS: weather, a live audio meter, real-time subtitles
-(speech recognition + optional translation), and a whale button that opens your app.
+A tiny Touch Bar widget for old MacBook Pros: weather, volume meter, live subtitles
+with translation. Built by a non-programmer, with DeepSeek.
 
-> ⚠️ **只有 2016–2019 那些带 Touch Bar 的 MacBook Pro 能用。**
-> 没有 Touch Bar 的机器（包括全部 Apple Silicon 笔记本）装不了，别试了。
->
-> 只在 macOS 13.7（Intel）上实测过。
+> 一个给老款 MacBook Pro 的 Touch Bar 小组件：天气、音量律动、实时字幕（可翻译）。
+> 由**一个不会写代码的人**，靠 DeepSeek 一句一句聊出来的。
+
+---
+
+## 关于我（中文）
+
+我不是程序员。就是个刚毕业、上班的普通打工人，**代码没学过**，纯属感兴趣，正自己摸着学。
+这整个项目，是**用 DeepSeek（V4.1 Flash 1017）+ DeepSeek Harness** 一行行聊出来的——
+我提想法，它写代码，我试，报错再贴给它。
+
+手头这台是 **2019 款 MacBook Pro**，Touch Bar 我一直觉得挺好玩，闲下来就想给它做点东西。
+但过阵子因为个人经济原因，这台电脑大概要卖掉，所以只能上传一个**半成品**：
+它不是产品，是个**思路**。谁看着有意思，拿走接着做就行。
+
+做得不好的地方，尽管指正。
+
+## About me (English)
+
+I'm an ordinary office worker from China, just out of university. I don't know how to
+code and never studied it — I'm just interested and learning by doing.
+
+Everything here was built by chatting with **DeepSeek (V4.1 Flash 1017)** through
+**DeepSeek Harness**: I described what I wanted, it wrote the code, I ran it, pasted the
+errors back.
+
+I have a 2019 MacBook Pro and always liked its Touch Bar, so I started playing with it.
+But I'll probably have to sell this machine for financial reasons, so I'm uploading a
+**work in progress** — not a polished product, just an idea worth sharing.
+Any corrections or improvements are very welcome.
 
 ---
 
@@ -14,20 +40,44 @@ A tiny Touch Bar widget for macOS: weather, a live audio meter, real-time subtit
 
 ![Touch Bar 实拍](docs/screenshot.jpg)
 
-
-占满 Touch Bar 的一行，从左到右：
+Touch Bar 上占一整行，从左到右是这个样子：
 
 ```
-[ 北京 12° 晴 ]  [ 律动条 / 字幕 ]  [ 🐳 ]  [ 收 ]
+[ 重庆 17° 小毛毛雨 ]   [ 律动条 / 字幕 ]      [ 🐳 ]  [ 收 ]
 ```
 
-- **天气**：点一下打开系统天气 App
-- **律动条**：把系统正在放的声音做成跳动的柱子
-- **字幕**：把系统声音实时转成文字，还能翻译
-- **鲸鱼**：打开你配置的应用（默认 `DeepSeek Harness`，可改成任何 app）
-- **收**：隐藏整条，还你原生 Touch Bar
+- **左边天气**：按定位自动取本地天气，点一下打开系统天气 App
+- **中间那块空白**：可以开「音量律动」（跟着系统声音跳），也可以开「字幕」
+- **右边鲸鱼**：点一下打开你指定的 app（默认 DeepSeek Harness，可以换成任何应用）
+- **收**：把整条藏起来，还你原生 Touch Bar
 
-菜单栏那个鲸鱼图标管所有开关。
+两个功能（律动 / 字幕）**互斥**，开一个会自动关掉另一个。
+
+### 字幕能干什么
+
+- 实时把系统正在播的声音转成文字，显示在 Touch Bar 上
+- 支持 **中文 / 英文 / 日语 / 韩语** 四种识别语言
+- 可以**自动翻译**成另一种语言（中文、英文、日语）
+
+**用来看生肉视频挺合适**：电影、纪录片、外文讲座这种，一般没问题。
+但**不适合听歌**——唱歌的歌词任何语音识别都很难，别抱期待。
+另外字幕有一点点延迟（1~2 秒），追求逐帧同步的话不合适。
+
+### 翻译用的什么
+
+- **国内**：百度翻译开放平台，自己申请 API，免费额度每月 5 万字
+- **海外**：代码里也留了 `google_free`（不用 key），但**我没实测过**，而且这个接口在国内连不上
+
+翻译这块我做得比较糙，**有能力的朋友可以自己接更好的**（DeepL、腾讯云都行，`translate.py` 里留了位置）。
+
+## 目前的完成度
+
+说实话：**半成品**。
+
+能用的部分：天气、律动、字幕、翻译、语言切换、快捷键。
+没做完的：设置界面、更多语言、打包成独立 app、歌词识别。
+
+我自己是拿来日常用的，够用。但离"产品"还有距离——留着给愿意接手的人。
 
 ## 不需要装虚拟声卡
 
