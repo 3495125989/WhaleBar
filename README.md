@@ -12,6 +12,9 @@ A tiny Touch Bar widget for macOS: weather, a live audio meter, real-time subtit
 
 ## 它是什么
 
+![Touch Bar 实拍](docs/screenshot.jpg)
+
+
 占满 Touch Bar 的一行，从左到右：
 
 ```
